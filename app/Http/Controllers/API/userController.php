@@ -7,6 +7,7 @@ use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Exception;
+use Facade\FlareClient\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -16,6 +17,7 @@ class userController extends Controller
     
     use PasswordValidationRules;
 
+    // API LOGIN
     public function login(Request $request)
     {
         try {
@@ -53,8 +55,11 @@ class userController extends Controller
 
     }
     
-    public function register(Request $request){
+    // API REGISTER
+    public function register(Request $request)
+    {
         try{
+            // Validasi dari inputan
             $request->validate([
                 'name' => [
                     'required',
@@ -68,7 +73,8 @@ class userController extends Controller
                     'uniqued:users'],
                 'password' => $this->passwordRules()
             ]);
-
+            
+            // Membuat Data User
             User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -83,8 +89,25 @@ class userController extends Controller
 
             $tokenResult = $user->createToken('authToken')->plainTextToken;
 
-        } catch(\Throwable $th) {
+            return ResponseFormatter::success([
+                'access_token' => $tokenResult,
+                'token_type' => 'Bearer',
+                'user' => $user
+            ]);
 
+        } catch(Exception $error) {
+            return ResponseFormatter::error([
+                'message' => 'Something went Wrong',
+                'error' => $error, 
+            ], 'Authentication Failed', 500);
         }
+    }
+
+    // API LOGOUT
+    public function logout(Request $request)
+    {
+        $token = $request->user()->currentAccessToken()->delete();
+        
+        return ResponseFormatter::success($token, 'Token Revoked');
     }
 }
