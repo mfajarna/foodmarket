@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\API\foodController;
+use App\Http\Controllers\API\midtransController;
 use App\Http\Controllers\API\transactionController;
 use App\Http\Controllers\API\userController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,13 +26,23 @@ Route::middleware('auth:sanctum')->group(function (){
     Route::post('user/photo', [userController::class, 'updatePhoto']);
     Route::post('logout', [userController::class, 'logout']);
 
+    Route::post('checkout', [transactionController::class, 'checkout']);
+
     Route::get('transaction', [transactionController::class, 'all']);
     Route::post('transaction/{id}', [transactionController::class, 'update']);
+    
 });
 
+// Route::get('product', function(){
+//     return Response()->json([
+//         "message" => "Hello"
+//     ]);
+// });
 
 // Bisa diakses walaupun tidak login
 Route::post('login', [userController::class, 'login']);
 Route::post('register', [userController::class, 'register']);
 
-Route::post('food', [foodController::class, 'all']);
+Route::get('food', [foodController::class, 'all']);
+
+Route::post('midtrans/callback', [midtransController::class, 'callback']);
