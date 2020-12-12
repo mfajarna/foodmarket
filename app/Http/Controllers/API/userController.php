@@ -11,6 +11,7 @@ use Facade\FlareClient\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class userController extends Controller
 {
@@ -21,11 +22,13 @@ class userController extends Controller
     public function login(Request $request)
     {
         try {
+
             // validasi input
             $request->validate([
                 'email' => 'email|required',
                 'password' => 'required'
             ]);
+
             // Mengecek credentials
             $credentials = request(['email','password']);
             if(!Auth::attempt($credentials)){
@@ -33,11 +36,13 @@ class userController extends Controller
                     'message' => 'Unauthorized'
                 ], 'Authentication Failed', 500);
             }
+
             // Jika Password tidak sesuai maka beri error
             $user = User::where('email', $request->email)->first();
             if(!Hash::check($request->password, $user->password, [])){
                 throw new \Exception('Invalid Credentials');
             }
+
             // Jika Berhasil maka login
             $tokenResult = $user->createToken('authToken')->plainTextToken;
             return ResponseFormatter::success([
@@ -110,4 +115,55 @@ class userController extends Controller
         
         return ResponseFormatter::success($token, 'Token Revoked');
     }
+
+    // API USER
+    public function fetch(Request $request)
+    {
+        return ResponseFormatter::success(
+            $request->user(),'Data profile berhasil diambil');
+        
+    }
+
+    // API update Profile
+    public function updateProfile(Request $request)
+    {
+        $data = $request->all();
+
+        $user = Auth::user();
+        $user->update($data);
+
+        return ResponseFormatter::success($user, 'Profile Update');
+    
+    }
+
+    // API update Photo
+    public function updatePhoto(Request $request)
+    {
+        // Validasi gambar
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|image|max:2048'
+        ]);
+
+        if($validator->fails()){
+            return ResponseFormatter::error(
+                ['error' => $validator->errors()],
+                'Update Photo Failed',
+                401
+            );
+        }
+
+        if($request->file('file')){
+            $file = $request->file->store('assets/user', 'public');
+
+            // simpan foto ke database (url)
+
+            $user = Auth::user();
+            $user->profile_photo_path = $file;
+            $user->update();
+
+            return ResponseFormatter::success([$file], 'File Succesfully Uploaded');
+        }
+        // jangan lupa jalankan php artisan storage:link
+    }
+
 }
