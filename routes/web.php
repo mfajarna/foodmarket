@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\API\midtransController;
+use App\Http\Controllers\dashboardController;
+use App\Http\Controllers\foodController;
+use App\Http\Controllers\userController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,17 +17,22 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+
+
+// homepage
 Route::get('/', function () {
-    return view('welcome');
+    return redirect()->route('dashboard');
 });
 
-Route::get('/debug-sentry', function () {
-    throw new Exception('My first Sentry error!');
-});
+// dashboard
+Route::prefix('dashboard')
+    ->middleware(['auth:sanctum','admin'])
+    ->group(function (){
+        Route::get('/', [dashboardController::class, 'index'])->name('dashboard');
+        Route::resource('users', userController::class);
+        Route::resource('food', foodController::class);
+    });
 
-Route::middleware(['auth:sanctum', 'verified'])->get('/dashboard', function () {
-    return view('dashboard');
-})->name('dashboard');
 
 
 // Midtrans related
